@@ -1,0 +1,645 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>MX Control Surface Config</title>
+
+<style>
+:root{
+  --fs: 12.5px;
+  --pad: 8px;
+  --gap: 10px;
+
+  --card-brd: #d7d7d7;
+  --card-bg:  #ffffff;
+  --page-bg:  #f6f7f8;
+
+  --input-w: 84px; /* узкий инпут (примерно в 3 раза уже, чем раньше) */
+}
+
+*{ box-sizing: border-box; }
+
+body{
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  font-size: var(--fs);
+  max-width: 980px;
+  margin: 10px auto;
+  padding: 0 10px;
+  line-height: 1.2;
+  background: var(--page-bg);
+  color: #111;
+}
+
+h1{ margin: 5px 0 6px; font-size: 18px; }
+h3{ margin: 5px 0 8px; font-size: 13.5px; }
+.hint{ color: #444; margin: 5px 0 9px; }
+.small{ font-size: 11.5px; color: #555; }
+.mono{ font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+
+.topbar{
+  display:flex;
+  flex-wrap:wrap;
+  gap: 6px;
+  align-items:center;
+  margin: 7px 0;
+}
+
+.grid2{
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--gap);
+}
+
+@media (max-width: 860px){
+  .grid2{ grid-template-columns: 1fr; }
+}
+
+.card{
+  border: 1px solid var(--card-brd);
+  border-radius: 12px;
+  padding: var(--pad);
+  background: var(--card-bg);
+}
+
+button{ padding: 5px 9px; font-size: 12px; }
+input, select{
+  padding: 4px 6px;
+  font-size: 12px;
+  border: 1px solid #bbb;
+  border-radius: 8px;
+}
+
+input[type="number"]{
+  width: var(--input-w);
+  max-width: 100%;
+}
+
+select{ width: min(420px, 100%); }
+
+pre{
+  background: #fafafa;
+  padding: 8px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  font-size: 11px;
+  height: 110px;
+  overflow:auto;
+}
+
+.hr{
+  height: 1px;
+  background: #ddd;
+  margin: 10px 0;
+}
+
+/* ====== Compact rows: label + input ====== */
+.row{
+  display:flex;
+  align-items:center;
+  gap: 10px;
+  margin: 6px 0;
+}
+.row .lbl{
+  font-weight: 800;
+  width: 28px;
+}
+
+/* ====== Pots/Buttons grid (no overlap) ====== */
+.gridPots{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 8px;
+}
+.gridBtns{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px 16px;
+  margin-top: 8px;
+}
+
+.cell{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+.cell .lbl{
+  font-weight: 800;
+  width: 28px;
+  flex: 0 0 auto;
+}
+.cell input{
+  flex: 0 0 auto;
+}
+
+/* Pots "Desired layout" placement */
+.p0{ grid-column: 1; grid-row: 1; }
+.p1{ grid-column: 3; grid-row: 1; }
+.p2{ grid-column: 1; grid-row: 2; }
+.p3{ grid-column: 2; grid-row: 2; }
+.p4{ grid-column: 3; grid-row: 2; }
+
+/* ====== Footer layout ====== */
+.footer{
+  margin: 12px 0 24px;
+  padding-top: 10px;
+  border-top: 1px dashed #ccc;
+}
+
+.workflow ol{
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+.workflow li{ margin: 4px 0; }
+
+/* ====== Device mini mock (no giant box) ====== */
+.deviceWrap{
+  display:flex;
+  justify-content:flex-start;
+  margin-top: 6px;
+}
+
+.device{
+  width: 260px;          /* “похоже на устройство”, без огромной ширины */
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #cfcfcf;
+  background: #fff;
+  box-shadow: 0 1px 0 rgba(0,0,0,0.03);
+}
+
+.device .grid{
+  display:grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px 18px;
+  align-items:center;
+  justify-items:start;
+  font-weight: 700;
+}
+.device .sep{
+  height: 10px;
+}
+.device .muted{
+  font-weight: 600;
+  color:#222;
+  opacity:0.85;
+}
+</style>
+</head>
+
+<body>
+
+<h1>MX Control Surface — Config</h1>
+<p class="hint">
+  Настройка MIDI CC без перепрошивки. Нумерация в UI соответствует физическому расположению.
+</p>
+
+<div class="topbar">
+  <button id="btnConnect">Connect</button>
+  <button id="btnDisconnect" disabled>Disconnect</button>
+  <button id="btnRead" disabled>Read</button>
+  <button id="btnApply" disabled>Apply</button>
+  <button id="btnSave" disabled>Save</button>
+  <button id="btnReadSave" disabled>Read → Save file</button>
+</div>
+
+<div class="grid2">
+  <div class="card">
+    <h3>MIDI Channel</h3>
+    <div class="row">
+      <div class="lbl">CH</div>
+      <select id="midiCh"></select>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Presets (A / B / C)</h3>
+    <div class="topbar">
+      <button id="loadA">Load A</button><button id="saveA">Save A</button>
+      <button id="loadB">Load B</button><button id="saveB">Save B</button>
+      <button id="loadC">Load C</button><button id="saveC">Save C</button>
+    </div>
+
+    <div class="hr"></div>
+
+    <h3>Backup</h3>
+    <div class="topbar">
+      <button id="btnExport">Export JSON</button>
+      <label for="fileImport" class="small" style="cursor:pointer; padding: 5px 6px;">Import JSON</label>
+      <input id="fileImport" type="file" accept="application/json" style="display:none">
+    </div>
+    <div class="small">Presets и текущее состояние сохраняются в браузере автоматически.</div>
+  </div>
+
+  <div class="card">
+    <h3>Log</h3>
+    <pre id="log"></pre>
+    <div class="small">WebSerial: Chrome/Edge. После Connect жми Read.</div>
+  </div>
+</div>
+
+<div class="grid2" style="margin-top:10px">
+  <div class="card">
+    <h3>Potentiometers</h3>
+    <div class="gridPots">
+      <div class="cell p0"><div class="lbl">P0</div><input id="uiP0" type="number" min="0" max="127"></div>
+      <div class="cell p1"><div class="lbl">P1</div><input id="uiP1" type="number" min="0" max="127"></div>
+      <div class="cell p2"><div class="lbl">P2</div><input id="uiP2" type="number" min="0" max="127"></div>
+      <div class="cell p3"><div class="lbl">P3</div><input id="uiP3" type="number" min="0" max="127"></div>
+      <div class="cell p4"><div class="lbl">P4</div><input id="uiP4" type="number" min="0" max="127"></div>
+    </div>
+    <div class="small" style="margin-top:8px">CC: 0–127 · избегай CC1/7/10/64 если не нужно</div>
+  </div>
+
+  <div class="card">
+    <h3>Buttons</h3>
+    <div class="gridBtns">
+      <div class="cell"><div class="lbl">B0</div><input id="uiB0" type="number" min="0" max="127"></div>
+      <div class="cell"><div class="lbl">B1</div><input id="uiB1" type="number" min="0" max="127"></div>
+      <div class="cell"><div class="lbl">B2</div><input id="uiB2" type="number" min="0" max="127"></div>
+      <div class="cell"><div class="lbl">B3</div><input id="uiB3" type="number" min="0" max="127"></div>
+      <div class="cell"><div class="lbl">B4</div><input id="uiB4" type="number" min="0" max="127"></div>
+      <div class="cell"><div class="lbl">B5</div><input id="uiB5" type="number" min="0" max="127"></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">
+  <div class="card workflow">
+    <h3>Workflow</h3>
+    <ol>
+      <li>Нажми <b>Connect</b> и выбери порт <b>XIAO</b>.</li>
+      <li>Нажми <b>Read</b>, чтобы считать текущую конфигурацию.</li>
+      <li>Измени <b>CC/Channel</b> и нажми <b>Apply</b> (применит на устройстве без записи).</li>
+      <li>Если всё ок — нажми <b>Save</b>, чтобы записать во флеш XIAO. Для бэкапа используй <b>Export JSON</b> или <b>Read → Save file</b>. Для пресетов — <b>Save/Load A/B/C</b>.</li>
+    </ol>
+
+    <div class="hr"></div>
+
+    <h3>Физический макет (упрощённо)</h3>
+    <div class="deviceWrap">
+      <div class="device mono">
+        <div class="grid">
+          <div>P0</div><div></div><div>P1</div>
+          <div>P2</div><div>P3</div><div>P4</div>
+          <div class="sep"></div><div class="sep"></div><div class="sep"></div>
+          <div class="muted">B0</div><div class="muted">B1</div><div class="muted">B2</div>
+          <div class="muted">B3</div><div class="muted">B4</div><div class="muted">B5</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="small" style="margin-top:8px;">
+      Примечание: индексы в прошивке могут отличаться — UI маппит их автоматически.
+    </div>
+  </div>
+</div>
+
+<script>
+/**
+ * UI (Desired) -> DEV (как в прошивке/коде, "fact")
+ * Подтверждено: нижняя левая кнопка = B3.
+ */
+const POT_UI_TO_DEV = [1, 3, 2, 0, 4];
+const BTN_UI_TO_DEV = [0, 2, 1, 3, 4, 5];
+
+const LS_KEY_CURRENT = "mx3_current_ui_cfg_v1";
+const LS_KEY_PRESET_A = "mx3_preset_A_v1";
+const LS_KEY_PRESET_B = "mx3_preset_B_v1";
+const LS_KEY_PRESET_C = "mx3_preset_C_v1";
+
+const el = (id)=>document.getElementById(id);
+const logEl = el("log");
+
+function log(msg){
+  const t = new Date().toLocaleTimeString();
+  logEl.textContent += `[${t}] ${msg}\n`;
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+function clamp127(n){
+  n = Number.isFinite(n) ? n : 0;
+  if (n < 0) n = 0;
+  if (n > 127) n = 127;
+  return n|0;
+}
+function clampCh(n){
+  n = Number.isFinite(n) ? n : 1;
+  if (n < 1) n = 1;
+  if (n > 16) n = 16;
+  return n|0;
+}
+
+function uiGet(){
+  return {
+    version: 1,
+    midiChannel: clampCh(+el("midiCh").value),
+    pots: [0,1,2,3,4].map(i => clamp127(+el(`uiP${i}`).value)),
+    btns: [0,1,2,3,4,5].map(i => clamp127(+el(`uiB${i}`).value)),
+  };
+}
+
+function uiSet(cfg){
+  if (!cfg) return;
+  if (cfg.midiChannel != null) el("midiCh").value = clampCh(+cfg.midiChannel);
+  if (Array.isArray(cfg.pots)) for (let i=0;i<5;i++) el(`uiP${i}`).value = clamp127(+cfg.pots[i]);
+  if (Array.isArray(cfg.btns)) for (let i=0;i<6;i++) el(`uiB${i}`).value = clamp127(+cfg.btns[i]);
+  autosave();
+}
+
+function autosave(){
+  try{ localStorage.setItem(LS_KEY_CURRENT, JSON.stringify(uiGet())); }catch(e){}
+}
+
+function loadAutosave(){
+  try{
+    const s = localStorage.getItem(LS_KEY_CURRENT);
+    if (!s) return;
+    uiSet(JSON.parse(s));
+    log("Loaded UI state from LocalStorage.");
+  }catch(e){}
+}
+
+// ===== WebSerial =====
+let port = null;
+let reader = null;
+let writer = null;
+let readLoopRunning = false;
+let rxBuf = "";
+let onLine = null;
+
+function setConnectedUI(yes){
+  el("btnConnect").disabled = yes;
+  el("btnDisconnect").disabled = !yes;
+  el("btnRead").disabled = !yes;
+  el("btnApply").disabled = !yes;
+  el("btnSave").disabled = !yes;
+  el("btnReadSave").disabled = !yes;
+}
+
+async function connect(){
+  if (!("serial" in navigator)){
+    alert("WebSerial недоступен. Используй Chrome/Edge.");
+    return;
+  }
+  port = await navigator.serial.requestPort({});
+  await port.open({ baudRate: 115200 });
+
+  writer = port.writable.getWriter();
+  reader = port.readable.getReader();
+
+  setConnectedUI(true);
+  log("Connected.");
+  startReadLoop();
+}
+
+async function disconnect(){
+  try{
+    readLoopRunning = false;
+    if (reader) { try{ await reader.cancel(); }catch(e){} reader.releaseLock(); }
+    if (writer) { writer.releaseLock(); }
+    if (port) { await port.close(); }
+  } finally {
+    port = null; reader = null; writer = null;
+    setConnectedUI(false);
+    log("Disconnected.");
+  }
+}
+
+async function startReadLoop(){
+  if (readLoopRunning) return;
+  readLoopRunning = true;
+  while (readLoopRunning && reader){
+    const { value, done } = await reader.read();
+    if (done) break;
+    if (!value) continue;
+    rxBuf += new TextDecoder().decode(value);
+    let idx;
+    while ((idx = rxBuf.indexOf("\n")) >= 0){
+      const line = rxBuf.slice(0, idx).replace(/\r/g,"").trim();
+      rxBuf = rxBuf.slice(idx+1);
+      if (line.length && onLine) onLine(line);
+    }
+  }
+  readLoopRunning = false;
+}
+
+async function writeLine(s){
+  if (!writer) throw new Error("Not connected");
+  await writer.write(new TextEncoder().encode(s + "\n"));
+}
+async function writeLines(lines){
+  for (const l of lines) await writeLine(l);
+}
+
+// ===== Protocol helpers =====
+async function readDeviceConfig(){
+  const dev = { midiChannel: 1, pots: Array(5).fill(0), btns: Array(6).fill(0) };
+  const timeoutMs = 1400;
+
+  return await new Promise(async (resolve, reject)=>{
+    const timer = setTimeout(()=>{
+      onLine = null;
+      reject(new Error("Timeout waiting for device response"));
+    }, timeoutMs);
+
+    onLine = (line)=>{
+      if (line.startsWith("CH=")){
+        dev.midiChannel = clampCh(parseInt(line.slice(3),10));
+      } else if (/^P[0-4]=/.test(line)){
+        const i = parseInt(line[1],10);
+        const v = parseInt(line.split("=")[1],10);
+        dev.pots[i] = clamp127(v);
+      } else if (/^B[0-5]=/.test(line)){
+        const i = parseInt(line[1],10);
+        const v = parseInt(line.split("=")[1],10);
+        dev.btns[i] = clamp127(v);
+      } else if (line === "OK"){
+        clearTimeout(timer);
+        onLine = null;
+        resolve(dev);
+      }
+    };
+
+    try{
+      await writeLine("GET");
+    }catch(e){
+      clearTimeout(timer);
+      onLine = null;
+      reject(e);
+    }
+  });
+}
+
+function fillUiFromDevice(devCfg){
+  el("midiCh").value = clampCh(devCfg.midiChannel);
+  for (let ui=0; ui<5; ui++){
+    const dev = POT_UI_TO_DEV[ui];
+    el(`uiP${ui}`).value = devCfg.pots[dev];
+  }
+  for (let ui=0; ui<6; ui++){
+    const dev = BTN_UI_TO_DEV[ui];
+    el(`uiB${ui}`).value = devCfg.btns[dev];
+  }
+  autosave();
+}
+
+function buildSetCommandsFromUi(){
+  const lines = [];
+  lines.push(`SET CH ${clampCh(+el("midiCh").value)}`);
+
+  for (let ui=0; ui<5; ui++){
+    const dev = POT_UI_TO_DEV[ui];
+    const v = clamp127(+el(`uiP${ui}`).value);
+    lines.push(`SET P${dev} ${v}`);
+  }
+  for (let ui=0; ui<6; ui++){
+    const dev = BTN_UI_TO_DEV[ui];
+    const v = clamp127(+el(`uiB${ui}`).value);
+    lines.push(`SET B${dev} ${v}`);
+  }
+  return lines;
+}
+
+// ===== Presets & files =====
+function savePreset(key){
+  localStorage.setItem(key, JSON.stringify(uiGet()));
+  log(`Preset saved.`);
+}
+function loadPreset(key){
+  const s = localStorage.getItem(key);
+  if (!s) { log(`Preset empty.`); return; }
+  uiSet(JSON.parse(s));
+  log(`Preset loaded.`);
+}
+
+function downloadText(filename, text){
+  const blob = new Blob([text], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url), 1000);
+}
+
+function exportJson(){
+  const payload = uiGet();
+  payload.exportedAt = new Date().toISOString();
+  downloadText(`mx3-config-${Date.now()}.json`, JSON.stringify(payload, null, 2));
+  log("Exported JSON.");
+}
+
+async function importJsonFile(file){
+  const text = await file.text();
+  const obj = JSON.parse(text);
+  uiSet(obj);
+  log("Imported JSON into UI.");
+}
+
+async function readAndSaveAsFile(){
+  const devCfg = await readDeviceConfig();
+  const uiCfg = {
+    version: 1,
+    midiChannel: devCfg.midiChannel,
+    pots: [],
+    btns: [],
+    exportedAt: new Date().toISOString(),
+    note: "UI numbering (Desired layout). Device indices are mapped automatically on Apply."
+  };
+  for (let ui=0; ui<5; ui++){
+    uiCfg.pots[ui] = devCfg.pots[POT_UI_TO_DEV[ui]];
+  }
+  for (let ui=0; ui<6; ui++){
+    uiCfg.btns[ui] = devCfg.btns[BTN_UI_TO_DEV[ui]];
+  }
+  downloadText(`mx3-from-device-${Date.now()}.json`, JSON.stringify(uiCfg, null, 2));
+  log("Read → saved as file.");
+}
+
+// ===== init =====
+(function init(){
+  for (let i=1;i<=16;i++){
+    const opt = document.createElement("option");
+    opt.value = i;
+    opt.textContent = String(i);
+    el("midiCh").appendChild(opt);
+  }
+  el("midiCh").value = 1;
+
+  // defaults
+  for (let i=0;i<5;i++) el(`uiP${i}`).value = 20 + i;
+  for (let i=0;i<6;i++) el(`uiB${i}`).value = 40 + i;
+
+  // autosave hooks
+  const ids = ["midiCh","uiP0","uiP1","uiP2","uiP3","uiP4","uiB0","uiB1","uiB2","uiB3","uiB4","uiB5"];
+  ids.forEach(id=>{
+    el(id).addEventListener("input", autosave);
+    el(id).addEventListener("change", autosave);
+  });
+
+  loadAutosave();
+  setConnectedUI(false);
+
+  el("btnConnect").onclick = async ()=>{ try{ await connect(); }catch(e){ log("Connect error: "+e.message); } };
+  el("btnDisconnect").onclick = async ()=>{ try{ await disconnect(); }catch(e){ log("Disconnect error: "+e.message); } };
+
+  el("btnRead").onclick = async ()=>{
+    try{
+      log("Reading from device...");
+      const devCfg = await readDeviceConfig();
+      fillUiFromDevice(devCfg);
+      log("Read OK.");
+    }catch(e){ log("Read error: " + e.message); }
+  };
+
+  el("btnApply").onclick = async ()=>{
+    try{
+      log("Apply → device (RAM)...");
+      await writeLines(buildSetCommandsFromUi());
+      log("Apply OK.");
+    }catch(e){ log("Apply error: " + e.message); }
+  };
+
+  el("btnSave").onclick = async ()=>{
+    try{
+      log("Saving to device (Flash)...");
+      await writeLines(buildSetCommandsFromUi());
+      await writeLine("SAVE");
+      log("Save OK.");
+    }catch(e){ log("Save error: " + e.message); }
+  };
+
+  el("btnReadSave").onclick = async ()=>{
+    try{
+      log("Read → Save file...");
+      await readAndSaveAsFile();
+    }catch(e){ log("Read→Save error: " + e.message); }
+  };
+
+  // presets
+  el("saveA").onclick = ()=>savePreset(LS_KEY_PRESET_A);
+  el("saveB").onclick = ()=>savePreset(LS_KEY_PRESET_B);
+  el("saveC").onclick = ()=>savePreset(LS_KEY_PRESET_C);
+  el("loadA").onclick = ()=>loadPreset(LS_KEY_PRESET_A);
+  el("loadB").onclick = ()=>loadPreset(LS_KEY_PRESET_B);
+  el("loadC").onclick = ()=>loadPreset(LS_KEY_PRESET_C);
+
+  // file
+  el("btnExport").onclick = exportJson;
+  el("fileImport").addEventListener("change", async (ev)=>{
+    const f = ev.target.files && ev.target.files[0];
+    if (!f) return;
+    try{ await importJsonFile(f); }catch(e){ log("Import error: "+e.message); }
+    ev.target.value = "";
+  });
+})();
+</script>
+
+</body>
+</html>
